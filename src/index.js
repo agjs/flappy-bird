@@ -16,10 +16,10 @@ class Game extends Phaser.Scene {
     super();
     this.bird = null;
     this.pipesToRender = 4;
-    this.pipeHorizontalDistance = 0;
+    this.pipeHorizontalDistance = 400;
     this.pipes = null;
 
-    this.initialPosition = { x: config.width / 10, y: config.height / 2 };
+    this.birdInitialPosition = { x: config.width / 10, y: config.height / 2 };
     this.flap = this.flap.bind(this);
     this.flapVelocity = -250;
   }
@@ -39,6 +39,8 @@ class Game extends Phaser.Scene {
     if (this.bird.y < -this.bird.height || this.bird.y > config.height) {
       this.restart();
     }
+
+    this.recyclePipes();
   }
 
   addEventListeners() {
@@ -50,7 +52,11 @@ class Game extends Phaser.Scene {
     this.add.image(0, 0, SKY_IMAGE_KEY).setOrigin(0, 0);
 
     this.bird = this.physics.add
-      .sprite(this.initialPosition.x, this.initialPosition.y, BIRD_IMAGE_KEY)
+      .sprite(
+        this.birdInitialPosition.x,
+        this.birdInitialPosition.y,
+        BIRD_IMAGE_KEY
+      )
       .setOrigin(0, 0);
 
     this.bird.body.gravity.y = 400;
@@ -67,8 +73,8 @@ class Game extends Phaser.Scene {
   }
 
   resetBirdPosition() {
-    this.bird.x = this.initialPosition.x;
-    this.bird.y = this.initialPosition.y;
+    this.bird.x = this.birdInitialPosition.x;
+    this.bird.y = this.birdInitialPosition.y;
     this.bird.body.velocity.y = 0;
   }
 
@@ -77,17 +83,18 @@ class Game extends Phaser.Scene {
   }
 
   placePipes(top, bottom) {
-    this.pipeHorizontalDistance += 400;
+    const rightMostX = this.getRightMostPipe();
     const distanceBetweenTopAndBottomPipes = Phaser.Math.Between(...[100, 250]);
     const topPipeY = Phaser.Math.Between(
       20,
       config.height - 20 - distanceBetweenTopAndBottomPipes
     );
+    const pipeHorizontalDistance = Phaser.Math.Between(...[450, 500]);
 
-    top.x = this.pipeHorizontalDistance;
+    top.x = rightMostX + pipeHorizontalDistance;
     top.y = topPipeY;
 
-    bottom.x = this.pipeHorizontalDistance;
+    bottom.x = top.x;
     bottom.y = topPipeY + distanceBetweenTopAndBottomPipes;
   }
 
@@ -97,6 +104,26 @@ class Game extends Phaser.Scene {
       const bottom = this.pipes.create(0, 0, PIPE_IMAGE_KEY).setOrigin(0, 0);
       this.placePipes(top, bottom);
     }
+  }
+
+  getRightMostPipe() {
+    let rightMostX = 0;
+    this.pipes.getChildren().forEach((pipe) => {
+      rightMostX = Math.max(pipe.x, rightMostX);
+    });
+    return rightMostX;
+  }
+
+  recyclePipes() {
+    this.pipes.getChildren().forEach((pipe) => {
+      /**
+       * If the right side of the pipe is out of bounds,
+       * meaning, the pipe is no longer in the scene
+       */
+      if (pipe.getBounds().right <= 0) {
+        console.log("YEP", pipe.getBounds().right);
+      }
+    });
   }
 }
 
