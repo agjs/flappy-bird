@@ -1,4 +1,4 @@
-import Phaser from 'phaser';
+import Phaser from "phaser";
 
 import {
   SKY_IMAGE_KEY,
@@ -9,11 +9,13 @@ import {
   PIPE_IMAGE_KEY,
   PAUSE_IMAGE_KEY,
   PAUSE_IMAGE_PATH,
-} from '../../constants/images';
+  BUTTON_IMAGE_KEY,
+  BUTTON_IMAGE_PATH,
+} from "../../constants/images";
 
 export default class PreloadScene extends Phaser.Scene {
   constructor() {
-    super('PreloadScene');
+    super("PreloadScene");
   }
 
   preload() {
@@ -21,10 +23,12 @@ export default class PreloadScene extends Phaser.Scene {
     this.load.image(BIRD_IMAGE_KEY, BIRD_IMAGE_PATH);
     this.load.image(PIPE_IMAGE_KEY, PIPE_IMAGE_PATH);
     this.load.image(PAUSE_IMAGE_KEY, PAUSE_IMAGE_PATH);
+    this.load.image(PAUSE_IMAGE_KEY, PAUSE_IMAGE_PATH);
+    this.load.image(BUTTON_IMAGE_KEY, BUTTON_IMAGE_PATH);
   }
 
   create() {
-    this.scene.start('MenuScene');
+    this.scene.start("MenuScene");
   }
   update() {}
 }

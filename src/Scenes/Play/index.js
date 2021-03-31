@@ -1,17 +1,18 @@
-import Phaser from 'phaser';
+import Phaser from "phaser";
 import {
   BIRD_IMAGE_KEY,
   PAUSE_IMAGE_KEY,
   PIPE_IMAGE_KEY,
-  SKY_IMAGE_KEY,
-} from '../../constants/images';
-import { POINTER_DOWN, SPACE_DOWN } from '../../constants/keys';
+} from "../../constants/images";
 
-export default class PlayScene extends Phaser.Scene {
+import { POINTER_DOWN, SPACE_DOWN } from "../../constants/keys";
+
+import BaseScene from "../Base";
+
+export default class PlayScene extends BaseScene {
   constructor(config) {
-    super('PlayScene');
+    super("PlayScene", config);
 
-    this.config = config;
     this.bird = null;
 
     this.pipesToRender = 4;
@@ -20,18 +21,19 @@ export default class PlayScene extends Phaser.Scene {
     this.flapVelocity = -250;
 
     this.score = 0;
-    this.bestScore = parseInt(localStorage.getItem('best-score')) || 0;
+    this.bestScore = parseInt(localStorage.getItem("best-score")) || 0;
     this.scoreText = null;
   }
 
   create() {
-    this.addBackground();
+    super.create();
     this.addBird();
     this.addPipes();
     this.addColliders();
     this.addScore();
     this.initEvents();
     this.addPauseButton();
+    this.addSceneEvents();
   }
 
   update() {
@@ -39,8 +41,37 @@ export default class PlayScene extends Phaser.Scene {
     this.recyclePipes();
   }
 
-  addBackground() {
-    this.add.image(0, 0, SKY_IMAGE_KEY).setOrigin(0, 0);
+  addSceneEvents() {
+    if (this.pauseEvent) {
+      return;
+    }
+    this.pauseEvent = this.events.on("resume", () => {
+      this.initialTime = 3;
+      this.countdownText = this.add
+        .text(...this.screenCenter, this.initialTime, {
+          fontSize: "90px",
+          fill: "#fff",
+          fontStyle: "bold",
+        })
+        .setOrigin(0.5);
+      this.timedEvent = this.time.addEvent({
+        delay: 1000,
+        callback: this.countdown,
+        callbackScope: this,
+        loop: true,
+      });
+    });
+  }
+
+  countdown() {
+    this.initialTime -= 1;
+    this.countdownText.setText(this.initialTime);
+
+    if (this.initialTime <= 0) {
+      this.countdownText.setText("");
+      this.physics.resume();
+      this.timedEvent.remove();
+    }
   }
 
   addPauseButton() {
@@ -49,15 +80,20 @@ export default class PlayScene extends Phaser.Scene {
       .setInteractive()
       .setScale(3)
       .setOrigin(1)
-      .on('pointerdown', () => {
+      .on("pointerdown", () => {
         this.physics.pause();
         this.scene.pause();
+        this.scene.launch("PauseScene");
       });
   }
 
   addBird() {
     this.bird = this.physics.add
-      .sprite(this.config.startPosition.x, this.config.startPosition.y, BIRD_IMAGE_KEY)
+      .sprite(
+        this.config.startPosition.x,
+        this.config.startPosition.y,
+        BIRD_IMAGE_KEY
+      )
       .setOrigin(0, 0);
 
     this.bird.body.gravity.y = 400;
@@ -67,8 +103,14 @@ export default class PlayScene extends Phaser.Scene {
   addPipes() {
     this.pipes = this.physics.add.group();
     for (let i = 0; i < this.pipesToRender; i += 1) {
-      const top = this.pipes.create(0, 0, PIPE_IMAGE_KEY).setImmovable(true).setOrigin(0, 1);
-      const bottom = this.pipes.create(0, 0, PIPE_IMAGE_KEY).setImmovable(true).setOrigin(0, 0);
+      const top = this.pipes
+        .create(0, 0, PIPE_IMAGE_KEY)
+        .setImmovable(true)
+        .setOrigin(0, 1);
+      const bottom = this.pipes
+        .create(0, 0, PIPE_IMAGE_KEY)
+        .setImmovable(true)
+        .setOrigin(0, 0);
       this.placePipes(top, bottom);
     }
     this.pipes.setVelocityX(-200);
@@ -80,15 +122,20 @@ export default class PlayScene extends Phaser.Scene {
 
   addScore() {
     this.scoreText = this.add.text(16, 16, `Score: ${this.score}`, {
-      fontSize: '24px',
-      fontStyle: 'bold',
-      fill: '#000',
+      fontSize: "24px",
+      fontStyle: "bold",
+      fill: "#000",
     });
-    this.bestScoreText = this.add.text(16, 40, `Best Score: ${this.bestScore}`, {
-      fontSize: '24px',
-      fontStyle: 'bold',
-      fill: '#000',
-    });
+    this.bestScoreText = this.add.text(
+      16,
+      40,
+      `Best Score: ${this.bestScore}`,
+      {
+        fontSize: "24px",
+        fontStyle: "bold",
+        fill: "#000",
+      }
+    );
   }
 
   initEvents() {
@@ -113,13 +160,16 @@ export default class PlayScene extends Phaser.Scene {
 
     if (this.score > this.bestScore) {
       this.bestScore = this.score;
-      localStorage.setItem('best-score', this.score);
+      localStorage.setItem("best-score", this.score);
     }
     this.score = 0;
   }
 
   checkGameStatus() {
-    if (this.bird.y <= 0 || this.bird.getBounds().bottom >= this.config.height) {
+    if (
+      this.bird.y <= 0 ||
+      this.bird.getBounds().bottom >= this.config.height
+    ) {
       this.gameOver();
     }
   }
@@ -129,7 +179,7 @@ export default class PlayScene extends Phaser.Scene {
     const distanceBetweenTopAndBottomPipes = Phaser.Math.Between(...[100, 250]);
     const topPipeY = Phaser.Math.Between(
       20,
-      this.config.height - 20 - distanceBetweenTopAndBottomPipes,
+      this.config.height - 20 - distanceBetweenTopAndBottomPipes
     );
 
     const pipeHorizontalDistance = Phaser.Math.Between(...[450, 500]);
